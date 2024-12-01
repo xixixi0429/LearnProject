@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -31,8 +32,13 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+//定義路由
+app.MapControllerRoute(
+    name: "LearnRecord",
+    pattern: "{controller=LearnRecord}/{action=Index}");
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=LearnRecord}/{action=Index}");
+app.Run();
 
 app.Run();

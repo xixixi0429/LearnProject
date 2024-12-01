@@ -2,6 +2,7 @@
 using LearnRecordAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Data;
 using System.Web.Http;
 using static LearnRecordAPI.Models.DTO.learnSubtopicAdminDTO;
@@ -20,6 +21,10 @@ namespace LearnRecordAPI.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// 查詢大類別
+        /// </summary>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpGet("GetLearnTopicAdmin")]
         public async Task<IActionResult> GetLearnTopicAdmin()
         {
@@ -30,6 +35,52 @@ namespace LearnRecordAPI.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// 查詢全類別
+        /// </summary>
+        /// <param name="topicName"></param>
+        /// <returns></returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet("GetLearnAllTopicAdmin")]
+        public async Task<IActionResult> GetLearnAllTopicAdmin()
+        {
+            var topics = await _context.learnTopicAdmin
+                .Select(topic => new
+                {
+                    topic.topicID,
+                    topic.topicName,
+                    topic.order,
+                    topic.description,
+                    subtopics = _context.learnSubtopicAdmin
+                        .Where(subtopic => subtopic.topicID == topic.topicID)
+                        .ToList()
+                })
+                .OrderBy(topic => topic.order)
+                .ToListAsync();
+
+            var result = topics.Select(topic => new
+            {
+                topic.topicID,
+                topic.topicName,
+                topic.order,
+                topic.description,
+                subtopicCount = topic.subtopics.Count(),
+                subtopicDetail = topic.subtopics.Select(subtopic => new
+                {
+                    subtopic.subtopicID,
+                    subtopic.subtopicName,
+                    subtopic.description,
+                    subtopic.order
+                }).ToList()
+            }).ToList();
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 查詢小類別
+        /// </summary>
+        /// <param name="topicName"></param>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpGet("GetLearnSubtopicAdmin/{topicName}")]
         public async Task<IActionResult> GetLearnSubtopicAdmin(string topicName)
         {
@@ -62,12 +113,17 @@ namespace LearnRecordAPI.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// 新增大類別
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpPost("AddLearnTopic")]
         public async Task<IActionResult> AddLearnTopic([System.Web.Http.FromBody] learnTopicAdminAdd data)
         {
             var insertData = new learnTopicAdmin
             {
-                topicID = data.topicID,
+                topicID = Guid.NewGuid(),
                 topicName = data.topicName,
                 function = data.function,
                 order = data.order,
@@ -84,6 +140,11 @@ namespace LearnRecordAPI.Controllers
             return Ok(insertData);
         }
 
+        /// <summary>
+        /// 修改大類別
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpPut("UpdateLearnTopic")]
         public async Task<IActionResult> UpdateLearnTopic([System.Web.Http.FromBody] learnTopicAdminUpdate data)
         {
@@ -101,6 +162,11 @@ namespace LearnRecordAPI.Controllers
             return Ok(modifyData);
         }
 
+        /// <summary>
+        /// 刪除大類別
+        /// </summary>
+        /// <param name="topicID"></param>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete("DeleteLearnTopic/{topicID}")]
         public async Task<IActionResult> DeleteLearnTopic(Guid topicID)
         {
@@ -127,13 +193,18 @@ namespace LearnRecordAPI.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// 新增小類別
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpPost("AddLearnSubtopic")]
         public async Task<IActionResult> AddLearnSubtopic([System.Web.Http.FromBody] learnSubtopicAdminAdd data)
         {
             var insertData = new learnSubtopicAdmin
             {
                 topicID = data.topicID,
-                subtopicID = data.subtopicID,
+                subtopicID = Guid.NewGuid(),
                 subtopicName = data.subtopicName,
                 order = data.order,
                 description = data.description,
@@ -149,10 +220,14 @@ namespace LearnRecordAPI.Controllers
             return Ok(insertData);
         }
 
+        /// <summary>
+        /// 修改小類別
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpPut("UpdateLearnSubtopic")]
         public async Task<IActionResult> UpdateLearnSubtopic([System.Web.Http.FromBody] learnSubtopicAdminUpdate data)
         {
-            var aaa = data.subtopicID;
             var modifyData = await _context.learnSubtopicAdmin.FirstOrDefaultAsync(x => x.topicID == data.topicID && x.subtopicID == data.subtopicID);
 
             modifyData.subtopicName = data.subtopicName;
@@ -166,6 +241,11 @@ namespace LearnRecordAPI.Controllers
             return Ok(modifyData);
         }
 
+        /// <summary>
+        /// 刪除小類別
+        /// </summary>
+        /// <param name="subtopicID"></param>
+        /// <returns></returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete("DeleteLearnSubtopic/{subtopicID}")]
         public async Task<IActionResult> DeleteLearnSubtopic(Guid subtopicID)
         {
