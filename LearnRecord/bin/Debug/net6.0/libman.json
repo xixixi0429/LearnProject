@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "defaultProvider": "jsdelivr",
+  "libraries": [
+    {
+      "library": "vue@2.7.9",
+      "destination": "wwwroot/lib/vue/",
+      "files": [
+        "dist/compiler-sfc.js",
+        "dist/compiler-sfc.min.js",
+        "dist/vue.common.dev.js",
+        "dist/vue.common.dev.min.js",
+        "dist/vue.common.js",
+        "dist/vue.common.min.js",
+        "dist/vue.common.prod.js",
+        "dist/vue.common.prod.min.js",
+        "dist/vue.esm.browser.js",
+        "dist/vue.esm.browser.min.js",
+        "dist/vue.esm.js",
+        "dist/vue.esm.min.js",
+        "dist/vue.js",
+        "dist/vue.min.js",
+        "dist/vue.runtime.common.dev.js",
+        "dist/vue.runtime.common.dev.min.js",
+        "dist/vue.runtime.common.js",
+        "dist/vue.runtime.common.min.js",
+        "dist/vue.runtime.common.prod.js",
+        "dist/vue.runtime.common.prod.min.js",
+        "dist/vue.runtime.esm.js",
+        "dist/vue.runtime.esm.min.js",
+        "dist/vue.runtime.js",
+        "dist/vue.runtime.min.js",
+        "dist/vue.runtime.mjs"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,454 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Learn Topic Admin</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1/dist/vue-resource.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+
+        header {
+            background-color: #3A3EA1;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .container {
+            margin: 30px auto;
+            max-width: 900px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #topictr {
+            background-color: #E0E0E0;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .btn {
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #4682B4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+            .btn:hover {
+                background-color: #4169E1;
+            }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+
+            .form-group input, .form-group select {
+                width: 100%;
+                padding: 8px;
+                box-sizing: border-box;
+            }
+
+        .form-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            position: relative; /* 設置為 relative，使閉合按鈕能相對於這個框框定位 */
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #888;
+            cursor: pointer;
+        }
+
+            .close-btn:hover {
+                color: #f00;
+            }
+    </style>
+    </head>
+    <body>
+        <header>學習紀錄</header>
+
+        <div id="learnRecord" class="container">           
+
+            <!-- 查詢大類別 -->
+            <div class="section">
+                <input class="btn" type="button" value="新增大類別" v-on:click="addTopicShow" />
+                <img src="https://icon-library.com/images/loading-gif-icon/loading-gif-icon-9.jpg" alt="Loading..." class="hidden" id="loading">
+                <table v-if="topics.length">
+                    <thead>
+                        <tr>
+                            <th>大類別名稱</th>
+                            <th>小類別名稱</th>
+                            <th>描述</th>
+                            <th>順序</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template v-for="topic in topics">
+                            <!-- 大類別 -->
+                            <tr id="topictr">
+                                <td>{{ topic.topicName }}</td>
+                                <td></td>
+                                <td>{{ topic.description }}</td>
+                                <td>{{ topic.order }}</td>
+                                <td>
+                                    <input type="button" class="btn" v-on:click="updateTopicShow(topic.topicName, topic.topicID, topic.order, topic.description)" value="修改大類別" />
+                                <input type="button" class="btn" v-on:click="deleteLearnTopic(topic.topicID)" value="刪除大類別" />
+                                <input type="button" class="btn" v-on:click="addSubtopicShow(topic.topicName,topic.topicID)" value="新增小類別" />
+                                </td>
+                            </tr>
+
+                            <!-- 小類別 -->
+                            <template v-if="topic.subtopicCount > 0">
+                                <tr v-for="(subtopic, index) in topic.subtopicDetail">                                
+                                    <td v-if="index == 0" :rowspan="topic.subtopicCount">{{ topic.topicName }}</td>
+                                    <td>{{ subtopic.subtopicName }}</td>
+                                    <td>{{ subtopic.description }}</td>
+                                    <td>{{ topic.order }} - {{ subtopic.order }}</td>                                    
+                                    <td>
+                                        <input type="button" class="btn" v-on:click="updateSubtopicShow(topic.topicID,topic.topicName, subtopic.subtopicID,subtopic.subtopicName, subtopic.order, subtopic.description)" value="修改小類別" />
+                                        <input type="button" class="btn" v-on:click="deleteLearnSubtopic(subtopic.subtopicID)" value="刪除小類別"/>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template v-if="topic.subtopicCount <= 0">
+                                <tr>
+                                    <td colspan="5" class="text-center">無細項</td>
+                                </tr>
+                            </template>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 新增大類別 -->
+            <div class="form-container hidden" id="addTopicForm">
+                <input type="button" value="X" class="close-btn" v-on:click="closeAddTopicForm" />
+                <h3>新增大類別</h3>
+                <div class="form-group">
+                    <label for="newTopicName">大類別名稱</label>
+                    <input type="text" id="newTopicName" v-model="newTopic.topicName" placeholder="請輸入大類別名稱">
+                </div>
+                <div class="form-group">
+                    <label for="newTopicDescription">順序</label>
+                    <input type="number" id="newTopicDescription" v-model="newTopic.order" placeholder="請輸入順序">
+                </div>
+                <div class="form-group">
+                    <label for="newTopicDescription">描述</label>
+                    <input type="text" id="newTopicDescription" v-model="newTopic.description" placeholder="請輸入描述">
+                </div>
+                <input type="button" class="btn" v-on:click="addLearnTopic" value="新增大類別" />
+            </div>
+
+            <!-- 新增小類別 -->
+            <div class="form-container hidden" id="addSubtopicForm">
+                <input type="button" value="X" class="close-btn" v-on:click="closeAddSubtopicForm" />
+                <h3>新增小類別</h3>
+                <div class="form-group">
+                    <label for="newTopicName">大類別名稱</label>
+                    <input type="text" id="newTopicName" v-model="newSubtopic.topicName" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="newTopicName">小類別名稱</label>
+                    <input type="text" id="newTopicName" v-model="newSubtopic.subtopicName" placeholder="請輸入小類別名稱">
+                </div>
+                <div class="form-group">
+                    <label for="newTopicDescription">順序</label>
+                    <input type="number" id="newTopicDescription" v-model="newSubtopic.order" placeholder="請輸入順序">
+                </div>
+                <div class="form-group">
+                    <label for="newTopicDescription">描述</label>
+                    <input type="text" id="newTopicDescription" v-model="newSubtopic.description" placeholder="請輸入描述">
+                </div>
+                <input type="button" class="btn" v-on:click="addLearnSubtopic" value="新增小類別" />
+            </div>
+
+            <!-- 修改大類別 -->
+            <div class="form-container hidden" id="updateTopicForm">
+                <input type="button" value="X" class="close-btn" v-on:click="closeUpdateTopicForm" />
+                <h3>修改大類別</h3>
+                <div class="form-group">
+                    <label for="updatedTopicName">大類別名稱</label>
+                    <input type="text" id="newTopicName" v-model="updatedTopic.topicName" placeholder="請輸入大類別名稱">
+                </div>
+                <div class="form-group">
+                    <label for="updatedTopicTopicDescription">順序</label>
+                    <input type="number" id="updatedTopicDescription" v-model="updatedTopic.order" placeholder="請輸入順序">
+                </div>
+                <div class="form-group">
+                    <label for="updatedTopicDescription">描述</label>
+                    <input type="text" id="updatedTopicDescription" v-model="updatedTopic.description" placeholder="請輸入描述">
+                </div>
+                <input type="button" class="btn" v-on:click="updateLearnTopic" value="修改大類別" />
+            </div>
+
+            <!-- 修改小類別 -->
+            <div class="form-container hidden" id="updateSubtopicForm">
+                <input type="button" value="X" class="close-btn" v-on:click="closeUpdateSubtopicForm" />
+                <h3>修改小類別</h3>
+                <div class="form-group">
+                    <label for="updatedTopicName">大類別名稱</label>
+                    <input type="text" v-model="updatedSubtopic.topicName" placeholder="請輸入大類別名稱">
+                </div>
+                <div class="form-group">
+                    <label for="updatedTopicName">小類別名稱</label>
+                    <input type="text" v-model="updatedSubtopic.subtopicName" placeholder="請輸入小類別名稱">
+                </div>
+                <div class="form-group">
+                    <label for="updatedTopicTopicDescription">順序</label>
+                    <input type="number" v-model="updatedSubtopic.order" placeholder="請輸入順序">
+                </div>
+                <div class="form-group">
+                    <label for="updatedTopicDescription">描述</label>
+                    <input type="text" v-model="updatedSubtopic.description" placeholder="請輸入描述">
+                </div>
+                <input type="button" class="btn" v-on:click="updateLearnSubtopic" value="修改小類別" />
+            </div>
+        </div>    
+    </body>
+
+    <script>
+        new Vue({
+            el: '#learnRecord',
+            data: {
+                topics: [],
+                subtopics: [],
+                selectedTopic: '',
+                newTopic: {
+                    topicName: '',
+                    order: 0,
+                    description: ''
+                },
+                newSubtopic: {
+                    topicName: '',
+                    topicID: '',
+                    subtopicName: '',
+                    order: 0,
+                    description: ''
+                },
+                updatedTopic: {
+                    topicID: '',
+                    topicName: '',
+                    order: 0,
+                    description: ''
+                },
+                updatedSubtopic: {
+                    topicID: '',
+                    topicName: '',
+                    subtopicID: '',
+                    subtopicName: '',
+                    order: 0,
+                    description: ''
+                },
+            },
+            mounted() {
+                this.getLearnTopicAdmin();
+            },
+        methods: {
+                getLearnTopicAdmin() {
+                    const form = document.getElementById("loading");
+                    form.classList.remove("hidden");
+                    this.$http.get('/api/LearnTopic/GetLearnAllTopicAdmin')
+                        .then(function (response) {
+                            this.topics = response.data;
+                            const form = document.getElementById("loading");
+                            form.classList.add("hidden");
+                        }, function (error) {
+                            console.error('獲取類別失敗', error);
+                            const form = document.getElementById("loading");
+                            form.classList.add("hidden");
+                        });
+                },
+                addTopicShow() {
+                    this.newTopic = {
+                        topicName: '',
+                        order: 0,
+                        description: ''
+                    };
+                    const form = document.getElementById("addTopicForm");
+                    form.classList.remove("hidden");
+                },
+                closeAddTopicForm() {
+                    const form = document.getElementById("addTopicForm");
+                    form.classList.add("hidden");
+                },
+                addLearnTopic() {
+                    this.$http.post('/api/LearnTopic/AddLearnTopic', this.newTopic)
+                            .then(function (response) {
+                            alert('新增大類別成功');
+                            const form = document.getElementById("addTopicForm");
+                            form.classList.add("hidden");
+                            this.getLearnTopicAdmin();
+                        }, function (error) {
+                            alert('新增大類別失敗');
+                            console.error(error);
+                        });
+                },
+                addSubtopicShow(topicName,topicID) {
+                    this.newSubtopic = {
+                        topicName: topicName,
+                        topicID: topicID,
+                        subtopicName: '',
+                        order: 0,
+                        description: ''
+                    };
+                    const form = document.getElementById("addSubtopicForm");
+                    form.classList.remove("hidden");
+                },
+                closeAddSubtopicForm() {
+                    const form = document.getElementById("addSubtopicForm");
+                    form.classList.add("hidden");
+                },
+                addLearnSubtopic() {
+                    var obj = {
+                        topicID: this.newSubtopic.topicID,
+                        subtopicName: this.newSubtopic.subtopicName,
+                        order: this.newSubtopic.order,
+                        description: this.newSubtopic.description
+                    };
+                    this.$http.post('/api/LearnTopic/AddLearnSubtopic', obj)
+                        .then(function (response) {
+                            alert('新增小類別成功');
+                            const form = document.getElementById("addSubtopicForm");
+                            form.classList.add("hidden");
+                            this.getLearnTopicAdmin();
+                        }, function (error) {
+                            alert('新增小類別失敗');
+                            console.error(error);
+                        });
+                },
+                updateTopicShow(topicName, topicID,order,description) {
+                    this.updatedTopic = {
+                        topicID: topicID,
+                        topicName: topicName,
+                        order: order,
+                        description: description
+                    };
+                    const form = document.getElementById("updateTopicForm");
+                    form.classList.remove("hidden");
+                },
+                closeUpdateTopicForm() {
+                    const form = document.getElementById("updateTopicForm");
+                    form.classList.add("hidden");
+                },
+                updateLearnTopic() {
+                    this.$http.put('/api/LearnTopic/UpdateLearnTopic', this.updatedTopic)
+                        .then(function (response) {
+                            alert('修改大類別成功');
+                            const form = document.getElementById("updateTopicForm");
+                            form.classList.add("hidden");
+                            this.getLearnTopicAdmin();
+                        }, function (error) {
+                            alert('修改大類別失敗');
+                            console.error(error);
+                        });
+                },
+                updateSubtopicShow(topicID, topicName, subtopicID, subtopicName, order, description) {
+                    this.updatedSubtopic = {
+                        topicID: topicID,
+                        topicName: topicName,
+                        subtopicID: subtopicID,
+                        subtopicName: subtopicName,
+                        order: order,
+                        description: description
+                    };
+                    const form = document.getElementById("updateSubtopicForm");
+                    form.classList.remove("hidden");
+                },
+                closeUpdateSubtopicForm() {
+                    const form = document.getElementById("updateSubtopicForm");
+                    form.classList.add("hidden");
+                },
+                updateLearnSubtopic() {
+                    this.$http.put('/api/LearnTopic/UpdateLearnSubtopic', this.updatedSubtopic)
+                        .then(function (response) {
+                            alert('修改小類別成功');
+                            const form = document.getElementById("updateSubtopicForm");
+                            form.classList.add("hidden");
+                            this.getLearnTopicAdmin();
+                        }, function (error) {
+                            alert('修改小類別失敗');
+                            console.error(error);
+                        });
+                },
+                deleteLearnTopic(deleteTopicID) {
+                    this.$http.delete(`/api/LearnTopic/DeleteLearnTopic/${deleteTopicID}`)
+                        .then(function (response) {
+                            alert('刪除大類別成功');
+                            this.getLearnTopicAdmin();
+                        }, function (error) {
+                            alert('刪除大類別失敗');
+                            console.error(error);
+                        });
+                },
+                deleteLearnSubtopic(deleteSubtopicID) {
+                    this.$http.delete(`/api/LearnTopic/DeleteLearnSubtopic/${deleteSubtopicID}`)
+                        .then(function (response) {
+                            alert('刪除小類別成功');
+                            this.getLearnTopicAdmin();
+                        }, function (error) {
+                            alert('刪除小類別失敗');
+                            console.error(error);
+                        });
+                }
+            }
+        });
+    </script>
+</html>
